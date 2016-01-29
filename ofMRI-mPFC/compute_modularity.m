@@ -34,7 +34,7 @@ end
 
 nrois = length(roi_names);
 gamma = 1;
-numIters = 1; %1000
+numIters = 2; %1000
 numReps = 1; %100
 
 Qs = cell(1,nSubs);
@@ -89,9 +89,9 @@ matchedQs = cell2mat(matchedQs);
 for sub = 1:nSubs
     for ii = 1:numIters
         if ii == 1
-            currMat = bsxfun(@plus, coClassificationMat{sub}(ii), coClassificationMat{sub}(ii+1))
+            currMat = bsxfun(@plus, coClassificationMat{sub}{ii}, coClassificationMat{sub}{ii+1});
         elseif ii ~= numIters
-            currMat = bsxfun(@plus, currMat, coClassificationMat{a}(ii+1));
+            currMat = bsxfun(@plus, currMat, coClassificationMat{a}{ii+1});
         else
             currMat = bsxfun(@plus, currMat, coClassificationMat{a}{ii});
         end

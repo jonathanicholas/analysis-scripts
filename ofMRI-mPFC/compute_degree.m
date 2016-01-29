@@ -1,4 +1,4 @@
-function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_names)
+function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_names, threshold)
 
     nrois = length(roi_names);
 
@@ -14,9 +14,9 @@ function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_na
     meanDegree = mean(meanDegree, 3);
 
     if strcmp(stim,'ON')
-        save(strcat(result_dir,'SSFO_ON_degree.mat'),'degree','meanDegree', 'roi_names')
+        save(strcat(result_dir,'SSFO_ON_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
     else
-        save(strcat(result_dir,'SSFO_OFF_degree.mat'),'degree','meanDegree', 'roi_names')
+        save(strcat(result_dir,'SSFO_OFF_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
     end
 end
 

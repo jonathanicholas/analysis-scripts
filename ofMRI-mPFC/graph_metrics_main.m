@@ -38,16 +38,16 @@ disp('---------------------------------------')
 disp('---------Computing Network Hubs--------')
 disp('---------------------------------------')
 disp(' ')
-[betweenness_on meanBetween_on] = compute_hubs(A_on, nSubs, 'ON', result_dir, roi_names);
-[betweenness_off meanBetween_off] = compute_hubs(A_off, nSubs, 'OFF', result_dir, roi_names);
+[betweenness_on meanBetween_on] = compute_hubs(A_on, nSubs, 'ON', result_dir, roi_names, '_thresh05');
+[betweenness_off meanBetween_off] = compute_hubs(A_off, nSubs, 'OFF', result_dir, roi_names, '_thresh05');
 
 % Compute degree
 disp('---------------------------------------')
 disp('--------Computing Network Degree-------')
 disp('---------------------------------------')
 disp(' ')
-[degree_on meanDegree_on] = compute_degree(A_on, nSubs, 'ON', result_dir, roi_names);
-[degree_off meanDegree_off] = compute_degree(A_off, nSubs, 'OFF', result_dir, roi_names);
+[degree_on meanDegree_on] = compute_degree(A_on, nSubs, 'ON', result_dir, roi_names, '_thresh05');
+[degree_off meanDegree_off] = compute_degree(A_off, nSubs, 'OFF', result_dir, roi_names, '_thresh05');
 
 % Compute Modularity
 
