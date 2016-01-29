@@ -18,7 +18,7 @@ stim = 'ON';
 %stim = 'OFF';
 
 threshold = 0.5;
-nSubs = 4;
+nSubs = 1 %4;
 
 A = make_adjacency(currDataDir, runs, stim, threshold, nSubs);
 
@@ -91,9 +91,9 @@ for sub = 1:nSubs
         if ii == 1
             currMat = bsxfun(@plus, coClassificationMat{sub}{ii}, coClassificationMat{sub}{ii+1});
         elseif ii ~= numIters
-            currMat = bsxfun(@plus, currMat, coClassificationMat{a}{ii+1});
+            currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii+1});
         else
-            currMat = bsxfun(@plus, currMat, coClassificationMat{a}{ii});
+            currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii});
         end
     end
     individualcoClass{sub} = currMat;
@@ -111,7 +111,7 @@ for sub = 1:nSubs
     matched_groupQ = median(matched_groupQ);
     
     for jj = 1:numReps
-        [CiforMax_coClass{jj} QforMax_coClass{jj}] = community_louvain(abs(individualcoClass{sub}), gamma);
+        [CiforMax_coClass{jj} QforMax_coClass(jj)] = community_louvain(abs(individualcoClass{sub}), gamma);
     end
     
     groupQmax = find(QforMax_coClass == max(QforMax_coClass));
@@ -141,9 +141,9 @@ for sub = 1:nSubs
     if sub == 1
         currMat = bsxfun(@plus, coClassification_group{sub}, coClassification_group{sub+1})
     elseif sub ~= numIters
-        currMat = bsxfun(@plus, currMat, coClassification_group{a}(i+1));
+        currMat = bsxfun(@plus, currMat, coClassification_group{sub}(i+1));
     else
-        currMat = bsxfun(@plus, currMat, coClassification_group{a}{i});
+        currMat = bsxfun(@plus, currMat, coClassification_group{sub}{i});
     end
     groupcoClass = currMat;
 end

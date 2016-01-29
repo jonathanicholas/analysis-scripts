@@ -2,6 +2,8 @@ clear all
 close all
 clc
 
+addpath('/mnt/musk2/home/jnichola/Plotting')
+
 result_dir = '/mnt/musk2/home/jnichola/mPFC_ofMRI/results/';
 
 onDataDir = ('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/CorrelationAndPartialCorrelationAnalysis/SSFO_ON/');
@@ -12,6 +14,7 @@ offRuns = {'SSFO_OFF_RatA_run1','SSFO_OFF_RatA_run2','SSFO_OFF_RatA_run3','SSFO_
 
 threshold = 0.5; %Threshold for creating adjacency matrix from correlation matrix (corrs > threshold = 1; corrs < threshold = 0)
 nSubs = 4;
+nToPlot = 20; %10
 
 %loading and removing number from roi name file
 old_names = importdata('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/ROILabels_shortForm.txt',',');
@@ -19,7 +22,7 @@ for ii = 1:length(old_names)
     for jj = 1:length(old_names{ii})
         if old_names{ii}(jj) == ' ' && jj < length(old_names{ii})
             roi_names{ii} = old_names{ii}(jj+1:length(old_names{ii})-1);
-        end    
+        end
     end
 end
 
@@ -41,6 +44,28 @@ disp(' ')
 [betweenness_on meanBetween_on] = compute_hubs(A_on, nSubs, 'ON', result_dir, roi_names, '_thresh05');
 [betweenness_off meanBetween_off] = compute_hubs(A_off, nSubs, 'OFF', result_dir, roi_names, '_thresh05');
 
+[sorted_between_on sorted_between_on_index] = sort(meanBetween_on, 1, 'descend');
+sorted_between_rois_on = roi_names(sorted_between_on_index)';
+
+[sorted_between_off sorted_between_off_index] = sort(meanBetween_off, 1, 'descend');
+sorted_between_rois_off = roi_names(sorted_between_off_index)';
+
+%subplot(1,2,1)
+figure(1)
+bar(sorted_between_on(1:nToPlot));
+title('top hubs ON stim');
+xticklabel_rotate([1:nToPlot],90,sorted_between_rois_on(1:nToPlot));
+
+saveas(gcf,[result_dir 'top20hubs_ON_thresh05.png'])
+
+%subplot(1,2,2)
+figure(2)
+bar(sorted_between_off(1:nToPlot))
+title('top hubs OFF stim')
+xticklabel_rotate([1:nToPlot],90,sorted_between_rois_off(1:nToPlot));
+
+saveas(gcf,[result_dir 'top20hubs_OFF_thresh05.png'])
+
 % Compute degree
 disp('---------------------------------------')
 disp('--------Computing Network Degree-------')
@@ -49,8 +74,39 @@ disp(' ')
 [degree_on meanDegree_on] = compute_degree(A_on, nSubs, 'ON', result_dir, roi_names, '_thresh05');
 [degree_off meanDegree_off] = compute_degree(A_off, nSubs, 'OFF', result_dir, roi_names, '_thresh05');
 
+[sorted_degree_on sorted_degree_on_index] = sort(meanDegree_on', 1, 'descend');
+sorted_degree_rois_on = roi_names(sorted_degree_on_index)';
+
+[sorted_degree_off sorted_degree_off_index] = sort(meanDegree_off', 1, 'descend');
+sorted_degree_rois_off = roi_names(sorted_degree_off_index)';
+
+%subplot(1,2,1)
+figure(3)
+bar(sorted_degree_on(1:nToPlot));
+title('most connected rois ON stim');
+xticklabel_rotate([1:nToPlot],90,sorted_degree_rois_on(1:nToPlot)');
+
+saveas(gcf,[result_dir 'top20degree_ON_thresh05.png'])
+
+%subplot(1,2,2)
+figure(4)
+bar(sorted_degree_off(1:nToPlot))
+title('most connected rois OFF stim')
+xticklabel_rotate([1:nToPlot],90,sorted_degree_rois_off(1:nToPlot)');
+
+saveas(gcf,[result_dir 'top20degree_OFF_thresh05.png'])
+
 % Compute Modularity
 
 % Plot results
 
 disp(strcat('Finished! Results saved in ', result_dir))
+
+
+
+
+
+
+
+
+
