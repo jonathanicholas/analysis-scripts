@@ -1,175 +1,145 @@
-clear all
-close all
-clc
+function [finalCi finalQ final_pVal final_hVal] = compute_modularity(A, nSubs, stim, result_dir, roi_names, threshold, numIters)
 
-addpath('/mnt/musk2/home/jnichola/BCT/')
 
-result_dir = '/mnt/musk2/home/jnichola/mPFC_ofMRI/results/';
+    nrois = length(roi_names);
+    gamma = 1;
+    numReps = 100;
 
-%%%%% Load/Prep Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    Qs = cell(1,nSubs);
+    matchedQs = cell(1, nSubs);
 
-currDataDir = ('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/CorrelationAndPartialCorrelationAnalysis/SSFO_ON/');
-%currDataDir = ('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/CorrelationAndPartialCorrelationAnalysis/SSFO_OFF/');
+    for sub = 1:nSubs
+        for ii = 1:numIters
 
-runs = {'SSFO_ON_RatA_run1','SSFO_ON_RatA_run2','SSFO_ON_RatB_run1','SSFO_ON_RatC_run1','SSFO_ON_RatC_run2','SSFO_ON_RatD_run1','SSFO_ON_RatD_run2'};
-%runs = {'SSFO_OFF_RatA_run1','SSFO_OFF_RatA_run2','SSFO_OFF_RatA_run3','SSFO_OFF_RatB_run1','SSFO_OFF_RatC_run1','SSFO_OFF_RatD_run1','SSFO_OFF_RatD_run2'};
+            matchedA = null_model_und_sign(A{sub});
+            [matched_Ci matched_Q] = community_louvain(matchedA,[],[],'negative_sym');
 
-stim = 'ON';
-%stim = 'OFF';
+            for jj = 1:numReps
 
-threshold = 0.5;
-nSubs = 1 %4;
+                [CiforMax{jj} QforMax(jj)] = community_louvain(A{sub},[],[],'negative_sym');
 
-A = make_adjacency(currDataDir, runs, stim, threshold, nSubs);
+            end
 
-%loading and removing number from roi name file
-old_names = importdata('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/ROILabels_shortForm.txt',',');
-for ii = 1:length(old_names)
-    for jj = 1:length(old_names{ii})
-        if old_names{ii}(jj) == ' ' && jj < length(old_names{ii})
-            roi_names{ii} = old_names{ii}(jj+1:length(old_names{ii})-1);
-        end    
-    end
-end
+            Q = find(QforMax == max(QforMax));
+            Q = Q(1);
+            Ci = CiforMax{Q};
+            Q = QforMax(Q);
 
-nrois = length(roi_names);
-gamma = 1;
-numIters = 2; %1000
-numReps = 1; %100
+            Qs{sub} = [Qs{sub} Q];
+            matchedQs{sub} = [matchedQs{sub} matched_Q];
 
-Qs = cell(1,nSubs);
-matchedQs = cell(1, nSubs);
+            currentModularity = Ci;
+            coClassification = zeros(nrois, nrois);
 
-for sub = 1:nSubs
-    for ii = 1:numIters
-        
-        matchedA = null_model_und_sign(A{sub});
-        [matched_Ci matched_Q] = community_louvain(abs(matchedA),gamma);
-        
-        for jj = 1:numReps
-            
-            [CiforMax{jj} QforMax(jj)] = community_louvain(A{sub},gamma);
-        
+            for row = 1:nrois
+                currVal = currentModularity(row);
+                for col = 1:nrois
+                    if currentModularity(row) == currentModularity(col)
+                        coClassification(row,col) = 1;
+                    end
+                end
+                coClassification(row,row) = 0;
+            end
+            coClassification_sub{ii} = coClassification;
         end
-        
-        Q = find(QforMax == max(QforMax));
-        Q = Q(1);
-        Ci = CiforMax{Q};
-        Q = QforMax(Q);
-        
-        Qs{sub} = [Qs{sub} Q];
-        matchedQs{sub} = [matchedQs{sub} matched_Q];
-        
-        currentModularity = Ci;
-        coClassification = zeros(nrois, nrois);
-        
+
+        coClassificationMat{sub} = coClassification_sub;
+        Qs{sub} = median(Qs{sub});
+        matchedQs{sub} = median(matchedQs{sub});
+
+    end
+
+    Qs = cell2mat(Qs);
+    matchedQs = cell2mat(matchedQs);
+
+    [Q_pVal Q_hVal] = ranksum(Qs, matchedQs);
+
+    for sub = 1:nSubs
+        for ii = 1:numIters
+            if ii == 1
+                currMat = bsxfun(@plus, coClassificationMat{sub}{ii}, coClassificationMat{sub}{ii+1});
+            elseif ii ~= numIters
+                currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii+1});
+            else
+                currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii});
+            end
+        end
+        individualcoClass{sub} = currMat;
+    end
+
+    for sub = 1:nSubs
+
+        for ii = 1:numIters
+            matched_groupA = null_model_und_sign(individualcoClass{sub});
+            [matched_groupCi matched_group_Q] = community_louvain(matched_groupA,[],[],'negative_sym');
+
+            matched_groupQ(ii) = matched_group_Q; 
+        end
+
+        matched_groupQ = median(matched_groupQ);
+
+        for jj = 1:numReps
+            [CiforMax_coClass{jj} QforMax_coClass(jj)] = community_louvain(individualcoClass{sub},[],[],'negative_sym');
+        end
+
+        groupQmax = find(QforMax_coClass == max(QforMax_coClass));
+        groupQmax = groupQmax(1);
+        groupCI = CiforMax_coClass{groupQmax};
+        groupQ = QforMax_coClass(groupQmax);
+
+        groupCurrMod = groupCI;
+        groupCIs(:,sub) = groupCurrMod;
+
+        group_coClass = zeros(nrois, nrois);
         for row = 1:nrois
-            currVal = currentModularity(row);
-            for col = 1:nrois
-                if currentModularity(row) == currentModularity(col)
-                    coClassification(row,col) = 1;
+           currVal = groupCurrMod(row);
+           for col = 1:nrois
+                if groupCurrMod(row) == groupCurrMod(col)
+                    group_coClass(row,col) = 1;
                 end
             end
-            coClassification(row,row) = 0;
+            group_coClass(row,row) = 0;
         end
-        coClassification_sub{ii} = coClassification;
+        coClassification_group{sub} = group_coClass;
     end
-    
-    coClassificationMat{sub} = coClassification_sub;
-    Qs{sub} = median(Qs{sub});
-    matchedQs{sub} = median(matchedQs{sub});
-    
-end
 
-Qs = cell2mat(Qs);
-matchedQs = cell2mat(matchedQs);
+    [groupQ_pVal groupQ_hVal] = ranksum(groupQ, matched_groupQ);
 
-[Q_pVal Q_hVal] = ranksum(Qs, matchedQs);
-
-for sub = 1:nSubs
-    for ii = 1:numIters
-        if ii == 1
-            currMat = bsxfun(@plus, coClassificationMat{sub}{ii}, coClassificationMat{sub}{ii+1});
-        elseif ii ~= numIters
-            currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii+1});
+    for sub = 1:nSubs
+        if sub == 1
+            currMat = bsxfun(@plus, coClassification_group{sub}, coClassification_group{sub+1});
+        elseif sub ~= numIters
+            currMat = bsxfun(@plus, currMat, coClassification_group{sub+1});
         else
-            currMat = bsxfun(@plus, currMat, coClassificationMat{sub}{ii});
+            currMat = bsxfun(@plus, currMat, coClassification_group{sub});
         end
+        groupcoClass = currMat;
     end
-    individualcoClass{sub} = currMat;
-end
 
-for sub = 1:nSubs
-    
-    for ii = 1:numIters
-        matched_groupA = null_model_und_sign(individualcoClass{sub});
-        [matched_groupCi matched_group_Q] = community_louvain(abs(matched_groupA), gamma); 
-    
-        matched_groupQ(ii) = matched_group_Q; 
-    end
-    
-    matched_groupQ = median(matched_groupQ);
-    
-    for jj = 1:numReps
-        [CiforMax_coClass{jj} QforMax_coClass(jj)] = community_louvain(abs(individualcoClass{sub}), gamma);
-    end
-    
-    groupQmax = find(QforMax_coClass == max(QforMax_coClass));
-    groupQmax = Qmax(1);
-    groupCI = CiforMax_coClass{groupQmax};
-    groupQ = QforMax_coClass(groupQmax);
-    
-    groupCurrMod = groupCI;
-    groupCIs(:,sub) = groupCurrMod;
-    
-    group_coClass = zeros(nrois, nrois)
-    for row = 1:nrois
-       currVal = groupCurrMod(row);
-       for col = 1:nrois
-            if groupCurrMod(row) == groupCurrMod(col)
-                group_coClass(row,col) = 1;
-            end
+    for sub = 1:nSubs
+        for ii = 1:numIters
+            matched_finalA = null_model_und_sign(coClassification_group{sub});
+            [matched_finalCi matched_finQ] = community_louvain(matched_finalA,[],[],'negative_sym');
+
+            matched_finalQ(ii) = matched_finQ;
         end
-        group_coClass(row,row) = 0;
+
+        matched_finalQ = median(matched_finalQ);
+        matched_final_Q(sub) = matched_finalQ;
     end
-    coClassification_group{sub} = group_coClass;
-end
 
-[groupQ_pVal groupQ_hVal] = ranksum(groupQ, matched_groupQ);
+    [finalCi finalQ] = community_louvain(groupcoClass,[],[],'negative_sym');
 
-for sub = 1:nSubs
-    if sub == 1
-        currMat = bsxfun(@plus, coClassification_group{sub}, coClassification_group{sub+1})
-    elseif sub ~= numIters
-        currMat = bsxfun(@plus, currMat, coClassification_group{sub}(i+1));
+    [final_pVal final_hVal] = ranksum(finalQ, matched_final_Q);
+
+
+    if strcmp(stim, 'ON')
+        save(strcat(result_dir,'SSFO_ON_modularity',threshold,'.mat'))
     else
-        currMat = bsxfun(@plus, currMat, coClassification_group{sub}{i});
+        save(strcat(result_dir,'SSFO_OFF_modularity',threshold,'.mat'))
     end
-    groupcoClass = currMat;
+
 end
-
-for sub = 1:nSubs
-    for ii = 1:numIters
-        matched_finalA = null_model_und_sign(groupcoClass{a});
-        [matched_finalCi matched_finQ] = community_louvain(abs(matched_finalA), gamma);
-    
-        matched_finalQ(ii) = matched_finQ;
-    end
-    
-    matched_finalQ = median(matched_finalQ);
-    matched_final_Q(sub) = matched_finalQ;
-end
-
-[finalCi finalQ] = community_louvain(abs(groupcoClass),gamma);
-
-[final_pVal final_hVal] = ranksum(finalQ, matched_final_Q);
-
-finalCi'
-
-
-
-
-
 
 
 

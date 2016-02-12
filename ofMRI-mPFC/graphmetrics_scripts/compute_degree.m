@@ -1,4 +1,4 @@
-function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_names, threshold)
+function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_names, threshold, nodeType)
 
     nrois = length(roi_names);
 
@@ -6,17 +6,26 @@ function [degree meanDegree] = compute_degree(A, nSubs, stim, result_dir, roi_na
 
     for sub = 1:nSubs
 
-        degree{sub} = nansum(A{sub}, 1)/2;
+        binaryA = any(A{sub},nrois);
+        degree{sub} = nansum(binaryA, 1)/2;
 
     end
 
     meanDegree = cat(3, degree{:});
     meanDegree = mean(meanDegree, 3);
 
-    if strcmp(stim,'ON')
-        save(strcat(result_dir,'SSFO_ON_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+    if strcmp(nodeType, 'DMN')
+        if strcmp(stim,'ON')
+            save(strcat(result_dir,'SSFO_ON_DMNdegree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+        else
+            save(strcat(result_dir,'SSFO_OFF_DMNdegree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+        end
     else
-        save(strcat(result_dir,'SSFO_OFF_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+        if strcmp(stim,'ON')
+            save(strcat(result_dir,'SSFO_ON_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+        else
+            save(strcat(result_dir,'SSFO_OFF_degree',threshold,'.mat'),'degree','meanDegree', 'roi_names')
+        end
     end
 end
 

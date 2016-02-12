@@ -6,11 +6,11 @@ addpath('/mnt/musk2/home/jnichola/MDS_Scripts_and_ofMRI_data/MDS_Scripts/MDS_dep
 
 %%%%% Load/Prep Data %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%currData = load('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/SSFO_ON_AllScans.mat');
-currData = load('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/SSFO_OFF_AllScans.mat');
+currData = load('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/SSFO_ON_AllScans.mat');
+%currData = load('/mnt/mandarin2/Public_Data/OptofMRI/Stanford_Prefrontal_Reward/TimeseriesData_MotionCorrected/SSFO_OFF_AllScans.mat');
 
-%stim = 'ON';
-stim = 'OFF';
+stim = 'ON';
+%stim = 'OFF';
 
 stim_design = ones(1,600);
 
@@ -18,11 +18,13 @@ stim_design = ones(1,600);
 
 %selecting for mPFC and ventral striatum only
 for ii = 1:4
-    timeseries{ii} = timeseries{ii}([25:32,51:68],:);
+    %timeseries{ii} = timeseries{ii}([25:32,51:68],:); %full node network for mPFC and vStriatium
+    %timeseries{ii} = timeseries{ii}([25:32,51:52,57:60],:);
+    timeseries{ii} = timeseries{ii}([27,51,55,57],:); %51, 55, 57
 end
 %%%% MDS Params %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-TR = 0.5 %500ms as described in supplementary methods
+TR = 0.5; %500ms as described in supplementary methods
 tol = 10^-4; %tolerance for MDS convergence
 maxIter = 100; %max allowable iterations
 
@@ -137,8 +139,8 @@ for subj = 1:Nsubjects
     
 end
 
-%save('SSFO_ON_MDS.mat','subj_model_parameters')
-save('SSFO_OFF_MDS.mat','subj_model_parameters')
+%save('SSFO_ON_26node_MDS.mat','subj_model_parameters')
+%save('SSFO_OFF_26node_MDS.mat','subj_model_parameters')
 
-
-
+save('/mnt/musk2/home/jnichola/mPFC_ofMRI/results/SSFO_ON_4node_MDS.mat','subj_model_parameters')
+%save('/mnt/musk2/home/jnichola/mPFC_ofMRI/results/SSFO_OFF_4node_MDS.mat','subj_model_parameters')

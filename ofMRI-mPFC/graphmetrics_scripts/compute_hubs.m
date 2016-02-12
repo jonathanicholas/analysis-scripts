@@ -1,4 +1,4 @@
-function [betweenness meanBetween] = compute_hubs(A, nSubs, stim, result_dir, roi_names, threshold)
+function [betweenness meanBetween] = compute_hubs(A, nSubs, stim, result_dir, roi_names, threshold, nodeType)
 
     nrois = length(roi_names);
 
@@ -14,10 +14,18 @@ function [betweenness meanBetween] = compute_hubs(A, nSubs, stim, result_dir, ro
     meanBetween = cat(3, betweenness{:});
     meanBetween = mean(meanBetween, 3);
 
-    if strcmp(stim,'ON')
-        save(strcat(result_dir,'SSFO_ON_hubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+    if strcmp(nodeType,'DMN')
+        if strcmp(stim,'ON')
+            save(strcat(result_dir,'SSFO_ON_DMNhubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+        else
+            save(strcat(result_dir,'SSFO_OFF_DMNhubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+        end
     else
-        save(strcat(result_dir,'SSFO_OFF_hubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+        if strcmp(stim,'ON')
+            save(strcat(result_dir,'SSFO_ON_hubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+        else
+            save(strcat(result_dir,'SSFO_OFF_hubs',threshold,'.mat'),'betweenness','meanBetween', 'roi_names')
+        end
     end
     
 end
